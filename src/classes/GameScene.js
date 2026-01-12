@@ -56,19 +56,14 @@ export class GameScene {
     this.scene.add(grassMesh);
   }
 
-  // TODO: Remover barreiras e adicionar geração procedural baseada em tile
   setupBarriers() {
     const size = this.mapSize / 2;
     const barrierHeight = 10;
     const barrierThickness = 2;
 
-    // Barreira Norte (topo) - com sobra para fechar as quinas
     this.createBarrier(0, size, this.mapSize + barrierThickness * 2, barrierThickness, barrierHeight);
-    // Barreira Sul (fundo) - com sobra para fechar as quinas
     this.createBarrier(0, -size, this.mapSize + barrierThickness * 2, barrierThickness, barrierHeight);
-    // Barreira Leste (direita)
     this.createBarrier(size, 0, barrierThickness, this.mapSize, barrierHeight);
-    // Barreira Oeste (esquerda)
     this.createBarrier(-size, 0, barrierThickness, this.mapSize, barrierHeight);
   }
 

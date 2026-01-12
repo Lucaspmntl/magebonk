@@ -19,7 +19,6 @@ if (document.readyState === 'loading') {
   init();
 }
 
-// Cleanup ao descarregar a página
 window.addEventListener('beforeunload', () => {
   game?.dispose();
 });

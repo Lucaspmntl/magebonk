@@ -73,7 +73,6 @@ function initSettings() {
   document.getElementById('shadows').checked = settings.shadows;
   document.getElementById('bloom').checked = settings.bloom;
 
-  // Setup range displays
   updateRangeDisplay('volumeGeral', 'volumeGeralValue');
   updateRangeDisplay('volumeMusica', 'volumeMusicaValue');
   updateRangeDisplay('volumeEfeitos', 'volumeEfeitosValue');
