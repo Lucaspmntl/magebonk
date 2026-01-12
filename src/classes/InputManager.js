@@ -16,6 +16,7 @@ export class InputManager {
 
     this.onMouseMove = null;
     this.onJump = null;
+    this.onMouseDown = null;
     this.onPointerLockChange = null;
 
     this.setupEventListeners();
@@ -28,45 +29,83 @@ export class InputManager {
 
     document.addEventListener('click', () => {
       if (!this.isPointerLocked) {
-        document.body.requestPointerLock =
+        const requestPointerLock =
           document.body.requestPointerLock ||
-          document.body.mozRequestPointerLock;
-        document.body.requestPointerLock();
+          document.body.mozRequestPointerLock ||
+          document.body.webkitRequestPointerLock;
+
+        if (requestPointerLock) {
+          requestPointerLock.call(document.body);
+        }
       }
     });
 
-    document.addEventListener('pointerlockchange', () => {
-      this.isPointerLocked = document.pointerLockElement === document.body;
-      this.onPointerLockChange?.(this.isPointerLocked);
+    document.addEventListener('mousedown', (e) => {
+      if (this.isPointerLocked) {
+        this.onMouseDown?.(e);
+      }
     });
 
-    document.addEventListener('mozpointerlockchange', () => {
-      this.isPointerLocked = document.mozPointerLockElement === document.body;
-      this.onPointerLockChange?.(this.isPointerLocked);
+    document.addEventListener('contextmenu', (e) => {
+      if (this.isPointerLocked) {
+        e.preventDefault();
+      }
     });
+
+    const pointerLockChangeHandler = () => {
+      this.isPointerLocked = !!(
+        document.pointerLockElement === document.body ||
+        document.mozPointerLockElement === document.body ||
+        document.webkitPointerLockElement === document.body
+      );
+      console.log('Pointer Lock:', this.isPointerLocked ? 'ATIVADO ✓' : 'DESATIVADO ✗');
+      this.onPointerLockChange?.(this.isPointerLocked);
+    };
+
+    document.addEventListener('pointerlockchange', pointerLockChangeHandler);
+    document.addEventListener('mozpointerlockchange', pointerLockChangeHandler);
+    document.addEventListener('webkitpointerlockchange', pointerLockChangeHandler);
   }
 
   handleKeyDown(e) {
     const key = e.key.toLowerCase();
 
-    if (key === 'w') this.keys.w = true;
-    if (key === 'a') this.keys.a = true;
-    if (key === 's') this.keys.s = true;
-    if (key === 'd') this.keys.d = true;
-    if (e.key === 'ArrowUp') this.keys.arrowUp = true;
-    if (e.key === 'ArrowDown') this.keys.arrowDown = true;
-    if (e.key === 'ArrowLeft') this.keys.arrowLeft = true;
-    if (e.key === 'ArrowRight') this.keys.arrowRight = true;
+    if (key === 'w') {
+      e.preventDefault();
+      this.keys.w = true;
+    }
+    if (key === 'a') {
+      e.preventDefault();
+      this.keys.a = true;
+    }
+    if (key === 's') {
+      e.preventDefault();
+      this.keys.s = true;
+    }
+    if (key === 'd') {
+      e.preventDefault();
+      this.keys.d = true;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      this.keys.arrowUp = true;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      this.keys.arrowDown = true;
+    }
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      this.keys.arrowLeft = true;
+    }
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      this.keys.arrowRight = true;
+    }
 
     if (key === ' ') {
       e.preventDefault();
       this.onJump?.();
-    }
-
-    if (key === 'escape') {
-      if (document.pointerLockElement) {
-        document.exitPointerLock();
-      }
     }
   }
 
@@ -106,16 +145,27 @@ export class InputManager {
 
   lockPointer() {
     if (!this.isPointerLocked) {
-      document.body.requestPointerLock =
+      const requestPointerLock =
         document.body.requestPointerLock ||
-        document.body.mozRequestPointerLock;
-      document.body.requestPointerLock();
+        document.body.mozRequestPointerLock ||
+        document.body.webkitRequestPointerLock;
+
+      if (requestPointerLock) {
+        requestPointerLock.call(document.body);
+      }
     }
   }
 
   unlockPointer() {
     if (this.isPointerLocked) {
-      document.exitPointerLock();
+      const exitPointerLock =
+        document.exitPointerLock ||
+        document.mozExitPointerLock ||
+        document.webkitExitPointerLock;
+
+      if (exitPointerLock) {
+        exitPointerLock.call(document);
+      }
     }
   }
 }

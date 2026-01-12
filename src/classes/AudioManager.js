@@ -11,7 +11,7 @@ export class AudioManager {
     this.audioLoader = new THREE.AudioLoader();
     this.sounds = {};
     this.lastWalkTime = 0;
-    this.walkInterval = 400; // ms entre passos
+    this.walkInterval = 400;
   }
 
   loadSound(name, path) {
@@ -35,16 +35,13 @@ export class AudioManager {
     this.lastWalkTime = now;
 
     if (this.sounds.walk) {
-      // Para o som anterior se ainda estiver tocando
       if (this.sounds.walk.isPlaying) {
         this.sounds.walk.stop();
       }
 
-      // Toca um fragmento pequeno do áudio (150ms = 0.15s)
       this.sounds.walk.currentTime = 0;
       this.sounds.walk.play();
 
-      // Para após 150ms
       setTimeout(() => {
         if (this.sounds.walk && this.sounds.walk.isPlaying) {
           this.sounds.walk.stop();
@@ -59,11 +56,9 @@ export class AudioManager {
         this.sounds.jumpFall.stop();
       }
 
-      // Toca um fragmento pequeno do áudio (200ms = 0.2s)
       this.sounds.jumpFall.currentTime = 0;
       this.sounds.jumpFall.play();
 
-      // Para após 200ms
       setTimeout(() => {
         if (this.sounds.jumpFall && this.sounds.jumpFall.isPlaying) {
           this.sounds.jumpFall.stop();

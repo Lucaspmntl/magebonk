@@ -24,8 +24,61 @@ export class SpeechRecognitionManager {
 
     this.onListeningStart = null;
     this.onListeningStop = null;
+    this.onCommand = null;
+    this.audioContext = null;
+    this.recentVolumes = [];
+    this.isAudioSetup = false;
 
     this.setupEventListeners();
+  }
+
+  async setupAudioAnalysis() {
+    if (this.isAudioSetup) return;
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const source = this.audioContext.createMediaStreamSource(stream);
+      const analyser = this.audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      this.isAudioSetup = true;
+      
+      const updateVolume = () => {
+        if (!this.isListening) {
+             requestAnimationFrame(updateVolume);
+             return;
+        }
+
+        analyser.getByteFrequencyData(dataArray);
+        
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          sum += dataArray[i];
+        }
+        const average = sum / dataArray.length;
+        const normalizedVolume = Math.max(0.1, Math.min(1.5, (average - 25) / 50)); 
+        
+        this.recentVolumes.push({ val: normalizedVolume, time: Date.now() });
+        
+        const now = Date.now();
+        this.recentVolumes = this.recentVolumes.filter(v => now - v.time < 2000);
+        
+        requestAnimationFrame(updateVolume);
+      };
+      
+      updateVolume();
+      
+    } catch (err) {
+      console.error('Erro ao acessar microfone para análise de volume:', err);
+    }
+  }
+
+  getPeakVolume() {
+      if (!this.recentVolumes || this.recentVolumes.length === 0) return 0.5;
+      return this.recentVolumes.reduce((max, curr) => Math.max(max, curr.val), 0);
   }
 
   setupEventListeners() {
@@ -47,6 +100,10 @@ export class SpeechRecognitionManager {
 
       if (transcript.trim()) {
         console.log('📝 Transcrito:', transcript);
+        if (this.onCommand) {
+            const intensity = this.getPeakVolume();
+            this.onCommand(transcript.trim(), intensity);
+        }
       }
     };
 
@@ -60,6 +117,8 @@ export class SpeechRecognitionManager {
       if (this.onListeningStop) {
         this.onListeningStop();
       }
+      
+      this.start();
     };
   }
 
@@ -70,7 +129,11 @@ export class SpeechRecognitionManager {
     }
 
     if (!this.isListening) {
-      this.recognition.start();
+      try {
+        this.recognition.start();
+        this.setupAudioAnalysis();
+      } catch (e) {
+      }
     }
   }
 

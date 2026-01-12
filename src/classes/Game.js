@@ -5,6 +5,7 @@ import { GameScene } from './GameScene.js';
 import { AudioManager } from './AudioManager.js';
 import { FPSCounter } from './FPSCounter.js';
 import { SpeechRecognitionManager } from './SpeechRecognitionManager.js';
+import { SpellManager } from './SpellManager.js';
 
 export class Game {
   constructor() {
@@ -14,7 +15,7 @@ export class Game {
     this.audioManager = new AudioManager(this.player.getCamera());
     this.fpsCounter = new FPSCounter();
     this.speechRecognitionManager = new SpeechRecognitionManager();
-    this.speechIndicator = document.getElementById('speech-indicator');
+    this.spellManager = new SpellManager(this.gameScene, this.player, this.audioManager);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -26,7 +27,7 @@ export class Game {
 
     this.settingsMenu = document.getElementById('settings-container');
     if (!this.settingsMenu) {
-        console.error("O 'settings-container' elemenento não foi encontrado no DOM.");
+      console.error("O 'settings-container' elemenento não foi encontrado no DOM.");
     }
 
     const container = document.getElementById('canvas-container');
@@ -34,118 +35,74 @@ export class Game {
       container.appendChild(this.renderer.domElement);
     }
 
-    const params = new URLSearchParams(window.location.search);
-    this.settingsOnlyMode = params.get('startMenu') === 'true';
-    if (this.settingsOnlyMode) {
-        this.hideGameUI();
-        this.togglePause();
-    }
+    this.inputManager.onPointerLockChange = (isLocked) => {
+      const status = document.getElementById('pointer-status');
+      if (status) {
+        if (isLocked) {
+          status.textContent = '🖱️ Mouse travado ✓';
+          status.style.color = '#44ff44';
+        } else {
+          status.textContent = '🖱️ Clique para travar o mouse';
+          status.style.color = '#ff4444';
+        }
+      }
+    };
 
-    this.setupEventListeners();
-    this.setupAudio();
-    this.setupCollisions();
-    this.setupPlayerAudio();
-    this.setupSpeechIndicator();
-    this.animate();
-  }
-
-togglePause() {
-    this.isPaused = !this.isPaused;
+        this.setupEventListeners();
+            this.setupAudio();
+            this.setupCollisions();
+            this.setupPlayerAudio();
+            this.setupSpells();
+            
+            this.speechRecognitionManager.start();
+        
+            this.animate();
+          }    
+    togglePause() {    this.isPaused = !this.isPaused;
 
     if (this.isPaused) {
-        if (this.settingsMenu) {
-            this.settingsMenu.style.display = 'block';
-        }
+      this.inputManager.unlockPointer();
 
-        if (this.animationFrameId !== null) {
-            cancelAnimationFrame(this.animationFrameId);
-            this.animationFrameId = null;
-        }
+      if (this.settingsMenu) {
+        this.settingsMenu.style.display = 'block';
+      }
+
+      if (this.animationFrameId !== null) {
+        cancelAnimationFrame(this.animationFrameId);
+        this.animationFrameId = null;
+      }
 
     } else {
-        if (this.settingsMenu) {
-            this.settingsMenu.style.display = 'none';
-        }
+      if (this.settingsMenu) {
+        this.settingsMenu.style.display = 'none';
+      }
 
-        this.animate();
+      this.animate();
     }
-}
-
-hideGameUI() {
-    const elementsToHide = [
-        'canvas-container',
-        'health-bar-container',
-        'pergaminho-magico',
-        'hud',
-        'menu-button',
-        'crosshair',
-        'info',
-        'speech-indicator'
-    ];
-
-    elementsToHide.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.style.display = 'none';
-        }
-    });
-}
+  }
 
   setupEventListeners() {
     window.addEventListener('resize', () => this.onWindowResize());
 
-    // Event listener para a tecla "P" para pausar/despausar o jogo
     document.addEventListener('keydown', (event) => {
-        if (event.key.toLowerCase() === "p" && !this.settingsOnlyMode) {
-            this.togglePause();
-        }
-        // Event listener para a tecla "V" para iniciar/parar a captura de voz
-        if (event.key.toLowerCase() === "v" && !this.settingsOnlyMode) {
-            this.speechRecognitionManager.toggle();
-        }
+      if (event.key === "Escape" || event.key.toLowerCase() === "p") {
+        this.togglePause();
+      }
     });
-    // Event Listener para perda de foco (mudança de aba ou minimização)
-    document.addEventListener('visibilitychange', () => this.handleFocusChange());
 
-    //Event Listener para o clique fora da janela do navegador (opcional, use blur/focus)
-    window.addEventListener('blur', () => this.handleBlur());
-    window.addEventListener('focus', () => this.handleFocus());
-  } 
-
-handleFocusChange() {
-    if (this.settingsOnlyMode) return;
-
-    if (document.hidden) {
-        if (!this.isPaused) {
-            this.togglePause();
-        }
-    } else {
-        if (this.isPaused) {
-            this.togglePause();
-        }
-    }
-}
-
-handleBlur() {
-    if (this.settingsOnlyMode) return;
-
-    if (!this.isPaused) {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && !this.isPaused) {
         this.togglePause();
-    }
-}
-
-handleFocus() {
-    if (this.settingsOnlyMode) return;
-
-    if (this.isPaused) {
-        this.togglePause();
-    }
-}
+      }
+    });
+  }
 
   async setupAudio() {
     try {
       await this.audioManager.loadSound('walk', '/sounds/walking-on-grass.mp3');
       await this.audioManager.loadSound('jumpFall', '/sounds/jump-fall.mp3');
+      await this.audioManager.loadSound('fireball', '/sounds/jump-fall.mp3');
+      await this.audioManager.loadSound('ice', '/sounds/jump-fall.mp3');
     } catch (error) {
       console.warn('Erro ao carregar sons:', error);
     }
@@ -162,18 +119,25 @@ handleFocus() {
     };
   }
 
-  setupSpeechIndicator() {
-    this.speechRecognitionManager.onListeningStart = () => {
-      if (this.speechIndicator) {
-        this.speechIndicator.style.display = 'flex';
-      }
-    };
+  setupSpells() {
+      this.inputManager.onMouseDown = (event) => {
+          if (event.button === 0) {
+             this.spellManager.castSpell('fireball', 0.5);
+          } else if (event.button === 2) {
+             this.spellManager.castSpell('ice', 0.5);
+          }
+      };
 
-    this.speechRecognitionManager.onListeningStop = () => {
-      if (this.speechIndicator) {
-        this.speechIndicator.style.display = 'none';
-      }
-    };
+      this.speechRecognitionManager.onCommand = (command, intensity = 0.5) => {
+          const lowerCmd = command.toLowerCase();
+          console.log(`Comando recebido: ${lowerCmd}, Intensidade: ${intensity.toFixed(2)}`);
+          
+          if (lowerCmd.includes('bola de fogo') || lowerCmd.includes('fireball') || lowerCmd.includes('fogo')) {
+              this.spellManager.castSpell('fireball', intensity);
+          } else if (lowerCmd.includes('gelo') || lowerCmd.includes('ice')) {
+              this.spellManager.castSpell('ice', intensity);
+          }
+      };
   }
 
   onWindowResize() {
@@ -185,6 +149,7 @@ handleFocus() {
     this.player.update();
     const playerPos = this.player.getPosition();
     this.gameScene.update(playerPos);
+    this.spellManager.update();
 
     if (this.player.isMoving && this.player.canJump) {
       this.audioManager.playWalkSound();
@@ -200,13 +165,11 @@ handleFocus() {
 
   animate = () => {
     this.animationFrameId = requestAnimationFrame(this.animate);
-    
-    //Lógica para somente atualizar e renderizar quando não estiver pausado
-    if (!this.isPaused) { 
-        this.update();
-        this.render();
-        this.fpsCounter.update();
-    } 
+    if (!this.isPaused) {
+      this.update();
+      this.render();
+      this.fpsCounter.update();
+    }
   };
 
   dispose() {

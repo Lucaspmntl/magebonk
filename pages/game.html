@@ -10,16 +10,18 @@
   <body>
     <div id="canvas-container"></div>
 
-    <div id="health-bar-container" class="barra-de-vida">
+    <div class="barra-de-vida">
       <div id="barra-de-vida"></div>
     </div>
 
     <div id="pergaminho-magico">
       <img src="/img/pergaminho-magico.png" alt="Pergaminho mágico">
+      <span id="spell-name"></span>
     </div>
 
     <div id="hud">
       <h2>MageBonk</h2>
+      <p id="pointer-status" style="color: #ff4444; font-size: 0.9rem;">🖱️ Clique para travar o mouse</p>
     </div>
 
     <button id="menu-button" onclick="window.location.href = '../index.html'">
@@ -31,16 +33,8 @@
     <div id="info">
       <p>⌨️ WASD ou Setas - Mover</p>
       <p>🖱️ Mouse - Olhar</p>
-      <p><span style="color: white;">ESC</span> - Desbloquear Mouse</p>
-      <p> <span style="color: white;">P</span> - Pausar Jogo </p>
-      <p><span style="color: white;">V</span> - Ativar/Desativar Fala</p>
-    </div>
-
-    <div id="speech-indicator" style="display: none;">
-      <div class="speech-indicator-content">
-        <div class="speech-pulse"></div>
-        <span>🎤 Ouvindo...</span>
-      </div>
+      <p>🖱️ Clique Esq/Dir - Magias</p>
+      <p><span style="color: white;">ESC</span> ou <span style="color: white;">P</span> - Menu de Pausa</p>
     </div>
 <!--MENU OVERLAY-->
       <div id="settings-container" style="display: none;">

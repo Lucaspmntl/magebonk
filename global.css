@@ -509,18 +509,41 @@ body::before {
 
 #pergaminho-magico {
     position: fixed;
-    bottom: 3%;
-    left: 47%;
-
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 250px;
     z-index: 100;
-    pointer-events: none;  /* evita bloquear cliques no jogo */
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #pergaminho-magico img {
-    width: 10%;
+    width: 100%;
     height: auto;
     display: block;
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));
+}
+
+#spell-name {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
     
+    font-family: 'Cinzel', serif;
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: #4B2E17; /* Couro escuro */
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    
+    /* Leve brilho/shadow para destacar do fundo do papel */
+    text-shadow: 0 1px 0 rgba(255,255,255,0.4);
 }
 
 
@@ -536,22 +559,23 @@ body::before {
 
 .page-header {
   text-align: center;
-  margin-bottom: 60px;
+  margin-bottom: 40px;
+  margin-top: 20px;
 }
 
 .page-header h1 {
   font-family: 'Cinzel', serif;
-  font-size: 4rem;
+  font-size: 3rem;
   background: linear-gradient(135deg, #C5A45A 0%, #E8D5B7 50%, #C5A45A 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin: 0 0 20px 0;
+  margin: 0 0 15px 0;
 }
 
 .page-header p {
   font-family: 'Crimson Text', serif;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   color: #6C757D;
   font-style: italic;
   margin: 0;
@@ -659,7 +683,8 @@ body::before {
 
 .back-button {
   display: inline-block;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
+  margin-top: 0;
   padding: 12px 24px;
   font-family: 'Cinzel', serif;
   font-size: 1rem;
@@ -682,36 +707,49 @@ body::before {
    PÁGINA DE CONFIGURAÇÕES
    =========================== */
 
+/* Standalone settings page container */
+#settings-page {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 80px 20px;
+}
+
+#settings-page .settings-content {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: 90%;
+  max-width: 900px;
+  padding: 50px 40px;
+}
+
 /* Novo Bloco: Estilos para o conteudo *dentro* do overlay */
 .settings-content {
-   position: absolute;
+    position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    
+
     max-width: 1400px;
-    width: 40%; 
-    max-height: 90%; 
-    
-    background-color: var(--color-bg-dark); 
-    border: 3px solid var(--color-accent); 
+    width: 40%;
+    max-height: 90%;
+
+    background-color: var(--color-bg-dark);
+    border: 3px solid var(--color-accent);
     border-radius: 10px;
-    
+
     padding: 40px 20px;
-    display: grid;
-    grid-template-columns: repeat(1, 2fr);
-    gap: 25px;
-    
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+
     overflow-y: auto;
-}
-
-#settings-content > .back-button,
-#settings-content > .page-header {
-  grid-column: 1 / -1;
-}
-
-#settings-content > .button-group {
-  grid-column: 1 / -1;
 }
 
 .settings-section {
@@ -720,9 +758,16 @@ body::before {
   border-radius: 10px;
   padding: 30px;
   margin-bottom: 25px;
+  margin-top: 0;
+  position: relative;
+  z-index: 1;
   box-shadow:
     0 0 20px rgba(197, 164, 90, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.settings-section:last-of-type {
+  margin-bottom: 0;
 }
 
 .settings-section h2 {
@@ -735,10 +780,14 @@ body::before {
 }
 
 .setting-item {
-  margin-bottom: 25px;
+  margin-bottom: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.setting-item:last-child {
+  margin-bottom: 0;
 }
 
 .setting-label {
@@ -791,7 +840,8 @@ select option {
 .button-group {
   display: flex;
   gap: 15px;
-  margin-top: 40px;
+  margin-top: 30px;
+  margin-bottom: 0;
 }
 
 .button {
@@ -831,8 +881,13 @@ select option {
    =========================== */
 
 @media (max-width: 1024px) {
-  #settings-content {
-    grid-template-columns: repeat(2, 1fr);
+  #settings-page .settings-content {
+    width: 85%;
+    padding: 40px 30px;
+  }
+
+  .settings-content {
+    width: 50%;
   }
 }
 
@@ -845,8 +900,21 @@ select option {
     grid-template-columns: 1fr;
   }
 
-  #settings-content {
-    grid-template-columns: 1fr;
+  #settings-page {
+    padding: 40px 15px;
+  }
+
+  #settings-page .settings-content {
+    width: 95%;
+    padding: 30px 20px;
+  }
+
+  .settings-content {
+    width: 70%;
+  }
+
+  .settings-section {
+    padding: 20px;
   }
 
   .setting-item {
@@ -858,6 +926,56 @@ select option {
   .setting-control {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header h1 {
+    font-size: 2rem;
+  }
+
+  .page-header p {
+    font-size: 1rem;
+  }
+
+  #settings-page .settings-content {
+    width: 100%;
+    padding: 25px 15px;
+  }
+
+  .settings-content {
+    width: 85%;
+    padding: 30px 15px;
+  }
+
+  .settings-section {
+    padding: 15px;
+  }
+
+  .settings-section h2 {
+    font-size: 1.2rem;
+  }
+
+  .setting-label {
+    font-size: 1rem;
+  }
+
+  input[type="range"] {
+    width: 120px;
+  }
+
+  .back-button {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
+
+  .button {
+    padding: 10px 20px;
+    font-size: 0.9rem;
   }
 }
 
