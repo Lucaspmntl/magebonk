@@ -1,6 +1,12 @@
 import * as THREE from 'three';
 
 export class Enemy {
+  static STUN_DURATION_MS = 300;
+  static ATTACK_FEEDBACK_DURATION_MS = 100;
+  static DAMAGE_FLASH_DURATION_MS = 100;
+  static DEATH_DISPOSAL_DELAY_MS = 200;
+  static SEPARATION_FORCE_MULTIPLIER = 1.2;
+
   constructor(scene, position, player, particleSystem = null, enemyManager = null) {
     this.scene = scene;
     this.player = player;
@@ -13,7 +19,7 @@ export class Enemy {
 
     this.maxHP = 50;
     this.currentHP = 50;
-    this.moveSpeed = 0.08;
+    this.moveSpeed = 5.0;
     this.collisionRadius = 1.0;
 
     this.state = 'idle';
@@ -30,6 +36,8 @@ export class Enemy {
     this.knockbackDecay = 0.9;
 
     this.separationRadius = 2.5;
+
+    this.activeTimeouts = [];
 
     this.createMesh();
   }
@@ -52,7 +60,7 @@ export class Enemy {
   }
 
   update(deltaTime = 0.016) {
-    if (this.state === 'dead') return;
+    if (this.state === 'dead' || !this.mesh) return;
 
     switch(this.state) {
       case 'idle':
@@ -128,15 +136,15 @@ export class Enemy {
       .subVectors(playerPos, this.position)
       .normalize();
 
-    const moveStep = direction.multiplyScalar(this.moveSpeed);
+    const moveStep = direction.multiplyScalar(this.moveSpeed * deltaTime);
     this.position.add(moveStep);
 
-    this.applySeparation();
+    this.applySeparation(deltaTime);
 
     this.mesh.lookAt(playerPos);
   }
 
-  applySeparation() {
+  applySeparation(deltaTime) {
     if (!this.enemyManager) return;
 
     const separationForce = new THREE.Vector3();
@@ -150,7 +158,7 @@ export class Enemy {
         const away = new THREE.Vector3()
           .subVectors(this.position, other.position)
           .normalize()
-          .multiplyScalar(0.02);
+          .multiplyScalar(Enemy.SEPARATION_FORCE_MULTIPLIER * deltaTime);
         separationForce.add(away);
       }
     }
@@ -174,12 +182,18 @@ export class Enemy {
   }
 
   showAttackFeedback() {
+    if (!this.mesh) return;
+
     const originalScale = this.mesh.scale.clone();
     this.mesh.scale.multiplyScalar(1.2);
 
-    setTimeout(() => {
-      this.mesh.scale.copy(originalScale);
-    }, 100);
+    const timeoutId = setTimeout(() => {
+      if (this.mesh) {
+        this.mesh.scale.copy(originalScale);
+      }
+    }, Enemy.ATTACK_FEEDBACK_DURATION_MS);
+
+    this.activeTimeouts.push(timeoutId);
   }
 
   takeDamage(amount) {
@@ -190,7 +204,7 @@ export class Enemy {
     if (this.currentHP <= 0) {
       this.die();
     } else {
-      this.transitionToStunned(300);
+      this.transitionToStunned(Enemy.STUN_DURATION_MS);
       this.flashDamage();
     }
   }
@@ -207,18 +221,24 @@ export class Enemy {
 
   applyKnockbackPhysics(deltaTime) {
     if (this.knockbackVelocity.length() > 0.01) {
-      this.position.add(this.knockbackVelocity);
+      this.position.addScaledVector(this.knockbackVelocity, deltaTime);
       this.knockbackVelocity.multiplyScalar(this.knockbackDecay);
     }
   }
 
   flashDamage() {
+    if (!this.mesh) return;
+
     const originalColor = this.mesh.material.color.clone();
     this.mesh.material.color.set(0xffffff);
 
-    setTimeout(() => {
-      this.mesh.material.color.copy(originalColor);
-    }, 100);
+    const timeoutId = setTimeout(() => {
+      if (this.mesh) {
+        this.mesh.material.color.copy(originalColor);
+      }
+    }, Enemy.DAMAGE_FLASH_DURATION_MS);
+
+    this.activeTimeouts.push(timeoutId);
   }
 
   die() {
@@ -231,9 +251,7 @@ export class Enemy {
       });
     }
 
-    setTimeout(() => {
-      this.dispose();
-    }, 200);
+    this.dispose();
   }
 
   getPosition() {
@@ -250,6 +268,9 @@ export class Enemy {
   }
 
   dispose() {
+    this.activeTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+    this.activeTimeouts = [];
+
     if (this.mesh) {
       this.scene.remove(this.mesh);
       this.mesh.geometry.dispose();

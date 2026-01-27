@@ -35,6 +35,10 @@ export class EnemyManager {
     const spawned = [];
 
     for (let i = 0; i < count; i++) {
+      if (this.enemies.length >= this.maxEnemies) {
+        break;
+      }
+
       const position = this.generateSpawnPosition(playerPos, radius);
       const enemy = this.spawnEnemy(position);
       if (enemy) {
@@ -70,10 +74,10 @@ export class EnemyManager {
 
   checkProjectileHit(projectile) {
     const projPos = projectile.mesh.position;
-    const projRadius = 0.5;
+    const projRadius = projectile.radius || 0.5;
 
     for (const enemy of this.enemies) {
-      if (enemy.state === 'dead') continue;
+      if (enemy.state === 'dead' || !enemy.mesh) continue;
 
       const distance = enemy.position.distanceTo(projPos);
       if (distance < enemy.collisionRadius + projRadius) {
@@ -81,8 +85,8 @@ export class EnemyManager {
           .subVectors(enemy.position, projPos)
           .normalize();
 
-        const knockbackForce = projectile.type === 'fireball' ? 2.0 : 1.0;
-        const damage = projectile.type === 'fireball' ? 25 : 20;
+        const knockbackForce = projectile.knockbackForce || (projectile.type === 'fireball' ? 2.0 : 1.0);
+        const damage = projectile.damage || (projectile.type === 'fireball' ? 25 : 20);
 
         enemy.takeDamage(damage);
         enemy.applyKnockback(knockbackForce, knockbackDir);

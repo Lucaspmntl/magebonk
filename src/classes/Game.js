@@ -26,6 +26,7 @@ export class Game {
 
     this.isPaused = false;
     this.animationFrameId = null;
+    this.lastFrameTime = performance.now();
 
     this.settingsMenu = document.getElementById('settings-container');
     if (!this.settingsMenu) {
@@ -157,12 +158,12 @@ export class Game {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
-  update() {
+  update(deltaTime) {
     this.player.update();
     const playerPos = this.player.getPosition();
     this.gameScene.update(playerPos);
-    this.spellManager.update();
-    this.enemyManager.update();
+    this.spellManager.update(deltaTime);
+    this.enemyManager.update(deltaTime);
 
     if (this.player.isMoving && this.player.canJump) {
       this.audioManager.playWalkSound();
@@ -179,7 +180,11 @@ export class Game {
   animate = () => {
     this.animationFrameId = requestAnimationFrame(this.animate);
     if (!this.isPaused) {
-      this.update();
+      const currentTime = performance.now();
+      const deltaTime = Math.min((currentTime - this.lastFrameTime) / 1000, 0.1);
+      this.lastFrameTime = currentTime;
+
+      this.update(deltaTime);
       this.render();
       this.fpsCounter.update();
     }
